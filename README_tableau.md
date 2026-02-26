@@ -174,7 +174,7 @@ OR RANK(SUM([Cost_Variance]), 'asc') <= 10
 2. Create Calculated Field → name it `Variance Color Flag`:
 ```
 IF SUM([Cost_Variance]) > 65000 THEN "Out of Bounds"
-ELSEIF SUM([Cost_Variance]) < -35000 THEN "Out of Bounds"
+ELSEIF SUM([Cost_Variance]) < -35000 THEN "At Risk"
 ELSE "On Track"
 END
 ```
