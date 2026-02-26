@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- 
+  =========================================
+  PROJECT DIRECTORY STRUCTURE:
+  D:\
+  └── project folder\
+      ├── index.html                           <-- This file
+      └── Fact_Projects_Merged (3).csv         <-- Your data file
+  =========================================
+-->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Executive Portfolio | 4K OLED Edition</title>
+    
+    <!-- Premium Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+
+    <!-- ========================================= -->
+    <!--                  CSS SECTION              -->
+    <!-- ========================================= -->
+    <style>
+        :root {
+            /* OLED True Black and Dark Grays */
+            --bg-base: #000000;
+            --bg-card: rgba(20, 20, 25, 0.6);
+            --bg-card-hover: rgba(30, 30, 40, 0.8);
+            
+            /* Vibrant Accents */
+            --accent-cyan: #00f0ff;
+            --accent-magenta: #ff007f;
+            --accent-purple: #7000ff;
+            --accent-emerald: #00ff88;
+            --accent-amber: #ffaa00;
+            --accent-red: #ff3333;
+            
+            /* Typography */
+            --text-main: #ffffff;
+            --text-muted: #8b8b9e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            min-height: 100vh;
+            /* Subtle animated ambient background */
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(112, 0, 255, 0.08), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(0, 240, 255, 0.08), transparent 25%);
+            background-attachment: fixed;
+            overflow-x: hidden;
+        }
+
+        /* 16:9 TV Optimization Container */
+        .tv-container {
+            width: 100vw;
+            min-height: 100vh;
+            padding: 2vw;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5vw;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        /* Top Header Area */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 1vw;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .header-title {
+           font-size: 2.5vw;
+           font-weight: 800;
+           background: linear-gradient(90deg, var(--text-main), var(--text-muted));
+           /* Keep the webkit version for Safari/Chrome support */
+           -webkit-background-clip: text; 
+           /* Add the standard property to satisfy the compiler and future-proof the code */
+           background-clip: text; 
+           -webkit-text-fill-color: transparent;
+           letter-spacing: -0.02em;
+        }
+        /* View Toggle Button */
+        .toggle-btn {
+            background: rgba(20, 20, 25, 0.8);
+            border: 1px solid rgba(0, 240, 255, 0.5);
+            padding: 0.8vw 1.5vw;
+            color: var(--accent-cyan);
+            font-size: 1vw;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 0.5vw;
+        }
+        .toggle-btn:hover {
+            background: rgba(0, 240, 255, 0.1);
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.6);
+            transform: translateY(-2px);
+        }
+
+        /* Interactive Glass Cards (Revolut/Apple Style) */
+        .glass-card {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 1.5vw;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            padding: 1.5vw;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 255, 255, 0.02) inset;
+        }
+
+        /* Dynamic Mouse Tracking Glow */
+        .glass-card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(800px circle at var(--mouse-x, 0) var(--mouse-y, 0), rgba(255, 255, 255, 0.06), transparent 40%);
+            z-index: 0;
+            opacity: 0;
+            transition: opacity 0.5s;
+            pointer-events: none;
+        }
+        .glass-card:hover::before {
+            opacity: 1;
+        }
+
+        .glass-card > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Grids */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5vw;
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5vw;
+            height: 35vh; 
+        }
+
+        .chart-grid-bottom {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 1.5vw;
+            height: 35vh;
+        }
+        
+        /* Grid for Extended View */
+        .extended-chart-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5vw;
+            height: 35vh;
+            margin-bottom: 1.5vw;
+        }
+
+        /* KPI Formatting */
+        .kpi-title {
+            font-size: 0.9vw;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 0.5vw;
+        }
+
+        .kpi-value {
+            font-size: 3vw;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 0.5vw;
+        }
+
+        .text-glow-cyan { text-shadow: 0 0 20px rgba(0, 240, 255, 0.4); color: var(--accent-cyan); }
+        .text-glow-magenta { text-shadow: 0 0 20px rgba(255, 0, 127, 0.4); color: var(--accent-magenta); }
+        .text-glow-emerald { text-shadow: 0 0 20px rgba(0, 255, 136, 0.4); color: var(--accent-emerald); }
+        .text-glow-red { text-shadow: 0 0 20px rgba(255, 51, 51, 0.4); color: var(--accent-red); }
+        .text-glow-amber { text-shadow: 0 0 20px rgba(255, 170, 0, 0.4); color: var(--accent-amber); }
+        .text-glow-purple { text-shadow: 0 0 20px rgba(112, 0, 255, 0.4); color: var(--accent-purple); }
+
+        /* Chart Containers */
+        .chart-container {
+            position: relative;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .chart-canvas-wrapper {
+            flex-grow: 1;
+            position: relative;
+            min-height: 0; 
+        }
+
+        /* File Loader Overlay */
+        #loader-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            backdrop-filter: blur(10px);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .loader-btn {
+            background: linear-gradient(45deg, var(--accent-purple), var(--accent-magenta));
+            border: none;
+            padding: 1vw 2.5vw;
+            color: white;
+            font-size: 1.2vw;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0 30px rgba(255, 0, 127, 0.5);
+            transition: all 0.3s;
+        }
+        .loader-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 50px rgba(255, 0, 127, 0.8);
+        }
+
+        input[type="file"] { display: none; }
+        
+        /* Custom Scrollbar for 4K */
+        ::-webkit-scrollbar { width: 12px; height: 12px; }
+        ::-webkit-scrollbar-track { background: var(--bg-base); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
+
+        /* View Management */
+        .view-section {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+        .view-section.active {
+            display: block;
+            opacity: 1;
+        }
+
+    </style>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+    <!-- Startup Loader / Fallback -->
+    <div id="loader-overlay">
+        <h1 style="font-size: 3vw; margin-bottom: 1vw;">Initializing System...</h1>
+        <p id="loader-msg" style="color: var(--text-muted); font-size: 1.2vw; margin-bottom: 2vw; max-width: 50vw;">
+            Place <strong style="color:white;">Fact_Projects_Merged-3.xlsx</strong> in the same folder as this HTML file,
+            then select it below — or it loads automatically if served via a local server.
+        </p>
+        <label class="loader-btn">
+            📂 Select Fact_Projects_Merged-3.xlsx
+            <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+        </label>
+    </div>
+
+    <!-- Main TV Dashboard Container -->
+    <div class="tv-container" id="dashboard" style="opacity: 0;">
+        
+        <!-- Header -->
+        <div class="header">
+            <div>
+                <h1 class="header-title" id="main-title">Global Portfolio Analytics</h1>
+                <p style="color: var(--text-muted); font-size: 1vw; margin-top: 0.2vw;" id="sub-title">Executive 4K Interactive Dashboard • Overview</p>
+            </div>
+            <div style="display: flex; gap: 2vw; align-items: center;">
+                <button id="viewToggleBtn" class="toggle-btn" onclick="toggleView()">
+                    ◧ Deep Dive Analytics
+                </button>
+                <div style="text-align: right;">
+                    <p style="font-size: 0.9vw; color: var(--text-muted); text-transform: uppercase;">System Status</p>
+                    <p style="font-size: 1.2vw; font-weight: 700; color: var(--accent-emerald); text-shadow: 0 0 15px rgba(0, 255, 136, 0.5);">● ONLINE</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- VIEW 1: EXECUTIVE OVERVIEW                     -->
+        <!-- ============================================== -->
+        <div id="view-executive" class="view-section active">
+            <div class="kpi-grid" style="margin-bottom: 1.5vw;">
+                <div class="glass-card">
+                    <div class="kpi-title">Total Portfolio Budget</div>
+                    <div class="kpi-value text-glow-cyan" id="kpi-planned">$0.00M</div>
+                    <div style="font-size: 0.8vw; color: var(--text-muted);">Cumulative planned allocation</div>
+                </div>
+                <div class="glass-card">
+                    <div class="kpi-title">Actual Spend (YTD)</div>
+                    <div class="kpi-value" id="kpi-actual" style="color: white;">$0.00M</div>
+                    <div style="font-size: 0.8vw; color: var(--text-muted);">Realized expenditures</div>
+                </div>
+                <div class="glass-card">
+                    <div class="kpi-title">Overall Cost Variance</div>
+                    <div class="kpi-value" id="kpi-variance">0.0%</div>
+                    <div style="font-size: 0.8vw; color: var(--text-muted);">Actual vs Planned delta</div>
+                </div>
+                <div class="glass-card">
+                    <div class="kpi-title">At Risk / Over Budget</div>
+                    <div class="kpi-value text-glow-magenta" id="kpi-risk">0 <span style="font-size: 1.5vw; color: var(--text-muted);">phases</span></div>
+                    <div style="font-size: 0.8vw; color: var(--text-muted);">Requires immediate intervention</div>
+                </div>
+            </div>
+
+            <div class="chart-grid" style="margin-bottom: 1.5vw;">
+                <div class="glass-card chart-container">
+                    <h2 style="font-size: 1.2vw; margin-bottom: 1vw;">Cost Performance Timeline</h2>
+                    <div class="chart-canvas-wrapper"><canvas id="timelineChart"></canvas></div>
+                </div>
+                <div class="glass-card chart-container">
+                    <h2 style="font-size: 1.2vw; margin-bottom: 1vw;">Health Distribution</h2>
+                    <div class="chart-canvas-wrapper"><canvas id="statusChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="chart-grid-bottom">
+                <div class="glass-card chart-container">
+                    <h2 style="font-size: 1.2vw; margin-bottom: 1vw;">Regional Concentration</h2>
+                    <div class="chart-canvas-wrapper"><canvas id="regionChart"></canvas></div>
+                </div>
+                <div class="glass-card chart-container">
+                    <h2 style="font-size: 1.2vw; margin-bottom: 1vw;">Variance by Phase Analysis</h2>
+                    <div class="chart-canvas-wrapper"><canvas id="varianceChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- VIEW 2: DEEP DIVE ANALYTICS (EXTENDED)         -->
+        <!-- ============================================== -->
+        <div id="view-deep-dive" class="view-section">
+            <div class="kpi-grid" style="margin-bottom: 1.5vw;">
+                <div class="glass-card">
+                    <div class="kpi-title">Global Duration Delay</div>
+                    <div class="kpi-value text-glow-amber" id="kpi-ext-duration">0 <span style="font-size: 1.5vw; color: var(--text-muted);">Days</span></div>
+                    <div style="font-size: 0.8vw; color: var(--text-muted);">Avg delay past planned duration</div>
+                </div>
+                <div class="glass-card">
+                    <div class="kpi-title">Deliverables Success Rate</div>
+                    <div class="kpi-value text-glow-purple" id="kpi-ext-deliverables">0%</div>
+                    <div style="font-size: 0.8vw; color: var(--text-muted);">Actual vs Planned Deliverables</div>
+                </div>
+                <div class="glass-card">
+                    <div class="kpi-title">Most Critical Country</div>
+                    <div class="kpi-value text-glow-red" id="kpi-ext-worst-country" style="font-size: 2.5vw;">N/A</div>
+                    <div style="font-size: 0.8vw; color: var(--text-muted);">Highest negative cost variance</div>
+                </div>
+                <div class="glass-card">
+                    <div class="kpi-title">Total Tracked Phases</div>
+                    <div class="kpi-value text-glow-emerald" id="kpi-ext-count">0</div>
+                    <div style="font-size: 0.8vw; color: var(--text-muted);">Distinct execution blocks</div>
+                </div>
+            </div>
+
+            <div class="extended-chart-grid">
+                <div class="glass-card chart-container">
+                    <h2 style="font-size: 1.2vw; margin-bottom: 0.2vw;">Geographical Variance Mapping</h2>
+                    <p style="font-size: 0.8vw; color: var(--text-muted); margin-bottom: 1vw;">Which specific countries are bleeding the budget? (Positive = Over Budget)</p>
+                    <div class="chart-canvas-wrapper"><canvas id="extCountryChart"></canvas></div>
+                </div>
+                <div class="glass-card chart-container">
+                    <h2 style="font-size: 1.2vw; margin-bottom: 0.2vw;">The Efficiency Matrix</h2>
+                    <p style="font-size: 0.8vw; color: var(--text-muted); margin-bottom: 1vw;">Do longer projects overspend? (X: Actual Duration | Y: Cost Variance)</p>
+                    <div class="chart-canvas-wrapper"><canvas id="extScatterChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="extended-chart-grid">
+                <div class="glass-card chart-container">
+                    <h2 style="font-size: 1.2vw; margin-bottom: 0.2vw;">Duration Creep by Phase</h2>
+                    <p style="font-size: 0.8vw; color: var(--text-muted); margin-bottom: 1vw;">Planned Days vs Actual Days logged per Phase</p>
+                    <div class="chart-canvas-wrapper"><canvas id="extDurationPhaseChart"></canvas></div>
+                </div>
+                <div class="glass-card chart-container">
+                    <h2 style="font-size: 1.2vw; margin-bottom: 0.2vw;">Execution vs Promise (Deliverables)</h2>
+                    <p style="font-size: 0.8vw; color: var(--text-muted); margin-bottom: 1vw;">Mapping target deliverables against actual outputs by Project Type</p>
+                    <div class="chart-canvas-wrapper"><canvas id="extRadarChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ========================================= -->
+    <!--               JAVASCRIPT SECTION          -->
+    <!-- ========================================= -->
+    <script>
+        let globalData = [];
+        let charts = {};
+        let isExtendedView = false;
+
+        // Chart.js Global Dark Theme Configuration for OLED
+        Chart.defaults.color = '#8b8b9e';
+        Chart.defaults.font.family = "'Outfit', sans-serif";
+        Chart.defaults.font.size = window.innerWidth * 0.008; 
+        Chart.defaults.scale.grid.color = 'rgba(255, 255, 255, 0.05)';
+        Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(10, 10, 15, 0.95)';
+        Chart.defaults.plugins.tooltip.titleFont = { size: window.innerWidth * 0.01, family: 'Outfit', weight: 'bold' };
+        Chart.defaults.plugins.tooltip.bodyFont = { size: window.innerWidth * 0.009, family: 'Outfit' };
+        Chart.defaults.plugins.tooltip.padding = 15;
+        Chart.defaults.plugins.tooltip.borderColor = 'rgba(0, 240, 255, 0.3)';
+        Chart.defaults.plugins.tooltip.borderWidth = 1;
+
+        // --- View Toggling ---
+        const toggleView = () => {
+            isExtendedView = !isExtendedView;
+            
+            const btn = document.getElementById('viewToggleBtn');
+            const v1 = document.getElementById('view-executive');
+            const v2 = document.getElementById('view-deep-dive');
+            const title = document.getElementById('main-title');
+            const sub = document.getElementById('sub-title');
+
+            if (isExtendedView) {
+                btn.innerHTML = '◨ Executive Overview';
+                btn.style.borderColor = 'rgba(255, 0, 127, 0.5)';
+                btn.style.color = 'var(--accent-magenta)';
+                btn.style.boxShadow = '0 0 15px rgba(255, 0, 127, 0.2)';
+                
+                title.innerText = 'Deep Dive Analytics';
+                sub.innerText = 'Permutation & Root Cause Analysis • Live Data Feed';
+                
+                v1.classList.remove('active');
+                setTimeout(() => {
+                    v1.style.display = 'none';
+                    v2.style.display = 'block';
+                    // Trigger reflow
+                    void v2.offsetWidth; 
+                    v2.classList.add('active');
+                    renderExtendedCharts(); // Render deep dive charts when visible
+                }, 500);
+
+            } else {
+                btn.innerHTML = '◧ Deep Dive Analytics';
+                btn.style.borderColor = 'rgba(0, 240, 255, 0.5)';
+                btn.style.color = 'var(--accent-cyan)';
+                btn.style.boxShadow = '0 0 15px rgba(0, 240, 255, 0.2)';
+                
+                title.innerText = 'Global Portfolio Analytics';
+                sub.innerText = 'Executive 4K Interactive Dashboard • Overview';
+
+                v2.classList.remove('active');
+                setTimeout(() => {
+                    v2.style.display = 'none';
+                    v1.style.display = 'block';
+                    void v1.offsetWidth;
+                    v1.classList.add('active');
+                }, 500);
+            }
+        };
+
+        // --- Mouse Tracking Effect for Glass Cards ---
+        const setupMouseTracking = () => {
+            document.addEventListener('mousemove', e => {
+                document.querySelectorAll('.glass-card').forEach(card => {
+                    // Only process visible cards for performance
+                    if (card.offsetParent !== null) {
+                        const rect = card.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const y = e.clientY - rect.top;
+                        card.style.setProperty('--mouse-x', `${x}px`);
+                        card.style.setProperty('--mouse-y', `${y}px`);
+                    }
+                });
+            });
+        };
+
+        // --- Data Loading Logic ---
+        const attemptAutoLoad = async () => {
+            // Try fetching xlsx first, then csv variants — works when served via local HTTP server
+            const candidates = [
+                { path: './Fact_Projects_Merged-3.xlsx', type: 'xlsx' },
+                { path: './Fact_Projects_Merged (3).xlsx', type: 'xlsx' },
+                { path: './Fact_Projects_Merged-3.csv',   type: 'csv'  },
+                { path: './Fact_Projects_Merged (3).csv', type: 'csv'  }
+            ];
+            for (const { path, type } of candidates) {
+                try {
+                    const response = await fetch(path);
+                    if (response.ok) {
+                        if (type === 'xlsx') {
+                            const arrayBuffer = await response.arrayBuffer();
+                            parseXlsx(arrayBuffer);
+                        } else {
+                            const csvText = await response.text();
+                            processData(csvText);
+                        }
+                        return; // success
+                    }
+                } catch (e) { /* try next */ }
+            }
+            // All auto-load paths failed — file picker is already visible, nothing more to do
+            console.log('Auto-load failed. File picker is available.');
+        };
+
+        // Parse xlsx ArrayBuffer using SheetJS and feed into processData
+        const parseXlsx = (arrayBuffer) => {
+            const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
+            const sheet    = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+            // Convert array-of-objects into CSV string so existing processData works unchanged
+            if (jsonRows.length === 0) return;
+            const headers = Object.keys(jsonRows[0]);
+            const csvLines = [
+                headers.join(','),
+                ...jsonRows.map(row =>
+                    headers.map(h => {
+                        let v = row[h];
+                        if (v instanceof Date) {
+                            // Format as DD-MM-YYYY to match existing date parsing
+                            const dd = String(v.getDate()).padStart(2,'0');
+                            const mm = String(v.getMonth()+1).padStart(2,'0');
+                            const yyyy = v.getFullYear();
+                            v = dd + '-' + mm + '-' + yyyy;
+                        }
+                        const s = String(v);
+                        return s.includes(',') ? '"' + s + '"' : s;
+                    }).join(',')
+                )
+            ];
+            processData(csvLines.join('\n'));
+        };
+
+        // File picker — handles both xlsx and csv
+        document.getElementById('fileInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                reader.onload = (event) => parseXlsx(event.target.result);
+                reader.readAsArrayBuffer(file);
+            } else {
+                reader.onload = (event) => processData(event.target.result);
+                reader.readAsText(file);
+            }
+        });
+
+        // --- Parsing and Dashboard Initialization ---
+        const processData = (csvText) => {
+            const lines = csvText.trim().split('\n');
+            const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+            
+            globalData = lines.slice(1).map(line => {
+                // Handle commas inside quotes if any exist
+                let values = [];
+                let inQuotes = false;
+                let currentVal = '';
+                for(let i=0; i<line.length; i++) {
+                    if(line[i] === '"') inQuotes = !inQuotes;
+                    else if(line[i] === ',' && !inQuotes) { values.push(currentVal.trim()); currentVal = ''; }
+                    else currentVal += line[i];
+                }
+                values.push(currentVal.trim());
+
+                const obj = {};
+                headers.forEach((h, i) => obj[h] = values[i] || '');
+                return obj;
+            }).filter(d => d.Project_ID); 
+
+            document.getElementById('loader-overlay').style.display = 'none';
+            document.getElementById('dashboard').style.opacity = '1';
+            
+            updateMainDashboard();
+            updateExtendedKPIs();
+            setupMouseTracking();
+        };
+
+        // ==========================================
+        // MAIN VIEW RENDERING
+        // ==========================================
+        const updateMainDashboard = () => {
+            // Main KPIs
+            const totalPlanned = globalData.reduce((sum, d) => sum + parseFloat(d.Planned_Cost || 0), 0);
+            const totalActual = globalData.reduce((sum, d) => sum + parseFloat(d.Actual_Cost || 0), 0);
+            
+            let variancePct = 0;
+            if (totalPlanned > 0) variancePct = ((totalActual - totalPlanned) / totalPlanned) * 100;
+
+            const atRisk = globalData.filter(d => d.Health_Status === 'At Risk').length;
+            const overBudget = globalData.filter(d => d.Health_Status === 'Over Budget').length;
+
+            document.getElementById('kpi-planned').innerText = '$' + (totalPlanned / 1000000).toFixed(2) + 'M';
+            document.getElementById('kpi-actual').innerText = '$' + (totalActual / 1000000).toFixed(2) + 'M';
+            
+            const varEl = document.getElementById('kpi-variance');
+            varEl.innerText = `${variancePct > 0 ? '+' : ''}${variancePct.toFixed(1)}%`;
+            varEl.className = variancePct > 0 ? 'kpi-value text-glow-red' : 'kpi-value text-glow-emerald';
+
+            document.getElementById('kpi-risk').innerHTML = `${atRisk + overBudget} <span style="font-size: 1.5vw; color: var(--text-muted);">phases</span>`;
+
+            // Main Charts
+            renderTimelineChart();
+            renderStatusChart();
+            renderRegionChart();
+            renderVarianceChart();
+        };
+
+        const renderTimelineChart = () => {
+            const ctx = document.getElementById('timelineChart').getContext('2d');
+            if (charts.timeline) charts.timeline.destroy();
+
+            const monthlyData = {};
+            globalData.forEach(d => {
+                if(!d.Date) return;
+                const parts = d.Date.split('-'); // DD-MM-YYYY expected
+                if (parts.length === 3) {
+                    const key = `${parts[2]}-${parts[1]}`; 
+                    if (!monthlyData[key]) monthlyData[key] = { p: 0, a: 0, label: `${parts[1]}/${parts[2]}` };
+                    monthlyData[key].p += parseFloat(d.Planned_Cost || 0);
+                    monthlyData[key].a += parseFloat(d.Actual_Cost || 0);
+                }
+            });
+
+            const sortedKeys = Object.keys(monthlyData).sort();
+            
+            const cyanGrad = ctx.createLinearGradient(0, 0, 0, 400);
+            cyanGrad.addColorStop(0, 'rgba(0, 240, 255, 0.4)');
+            cyanGrad.addColorStop(1, 'rgba(0, 240, 255, 0.0)');
+
+            const magentaGrad = ctx.createLinearGradient(0, 0, 0, 400);
+            magentaGrad.addColorStop(0, 'rgba(255, 0, 127, 0.4)');
+            magentaGrad.addColorStop(1, 'rgba(255, 0, 127, 0.0)');
+
+            charts.timeline = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: sortedKeys.map(k => monthlyData[k].label),
+                    datasets: [
+                        { label: 'Planned Cost', data: sortedKeys.map(k => monthlyData[k].p), borderColor: '#00f0ff', backgroundColor: cyanGrad, borderWidth: 4, fill: true, pointRadius: 0, pointHoverRadius: 8 },
+                        { label: 'Actual Spend', data: sortedKeys.map(k => monthlyData[k].a), borderColor: '#ff007f', backgroundColor: magentaGrad, borderWidth: 4, borderDash: [5, 5], fill: true, pointRadius: 0, pointHoverRadius: 8 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        y: { ticks: { callback: v => '$' + (v/1000) + 'K' }, grid: { borderDash: [2, 4] } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        };
+
+        const renderStatusChart = () => {
+            const ctx = document.getElementById('statusChart').getContext('2d');
+            if (charts.status) charts.status.destroy();
+
+            const counts = { 'On Track': 0, 'At Risk': 0, 'Over Budget': 0 };
+            globalData.forEach(d => { if(counts[d.Health_Status]!==undefined) counts[d.Health_Status]++; });
+
+            charts.status = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['On Track', 'At Risk', 'Over Budget'],
+                    datasets: [{ data: [counts['On Track'], counts['At Risk'], counts['Over Budget']], backgroundColor: ['#00ff88', '#ffaa00', '#ff3333'], borderWidth: 0, hoverOffset: 10 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom' } } }
+            });
+        };
+
+        const renderRegionChart = () => {
+            const ctx = document.getElementById('regionChart').getContext('2d');
+            if (charts.region) charts.region.destroy();
+
+            const regionCounts = {};
+            globalData.forEach(d => { if(d.Region) regionCounts[d.Region] = (regionCounts[d.Region] || 0) + 1; });
+            const sorted = Object.entries(regionCounts).sort((a, b) => b[1] - a[1]);
+
+            charts.region = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sorted.map(i => i[0]),
+                    datasets: [{ label: 'Projects', data: sorted.map(i => i[1]), backgroundColor: '#7000ff', borderRadius: 8, hoverBackgroundColor: '#00f0ff' }]
+                },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { borderDash: [2, 4] } }, y: { grid: { display: false } } } }
+            });
+        };
+
+        const renderVarianceChart = () => {
+            const ctx = document.getElementById('varianceChart').getContext('2d');
+            if (charts.variance) charts.variance.destroy();
+
+            const phaseVar = {}; const phaseCount = {};
+            globalData.forEach(d => {
+                if(!d.Phase) return;
+                const phase = d.Phase.split(' - ')[0]; 
+                const v = parseFloat(d.Cost_Variance_Pct || 0);
+                if (!phaseVar[phase]) { phaseVar[phase] = 0; phaseCount[phase] = 0; }
+                phaseVar[phase] += v; phaseCount[phase] += 1;
+            });
+
+            const labels = Object.keys(phaseVar).sort();
+            const data = labels.map(p => phaseVar[p] / phaseCount[p]);
+
+            charts.variance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{ label: 'Avg Variance %', data: data, backgroundColor: data.map(v => v > 0 ? '#ff3333' : '#00ff88'), borderRadius: 8 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { borderDash: [2, 4] } }, x: { grid: { display: false } } } }
+            });
+        };
+
+        // ==========================================
+        // EXTENDED DEEP DIVE RENDERING
+        // ==========================================
+        const updateExtendedKPIs = () => {
+            // Duration Delay Avg
+            const totDurVar = globalData.reduce((sum, d) => sum + parseFloat(d.Duration_Variance || 0), 0);
+            const avgDurVar = totDurVar / globalData.length;
+            document.getElementById('kpi-ext-duration').innerHTML = `${avgDurVar > 0 ? '+' : ''}${avgDurVar.toFixed(1)} <span style="font-size: 1.5vw; color: var(--text-muted);">Days</span>`;
+            
+            // Deliverables Rate
+            const actDeliv = globalData.reduce((sum, d) => sum + parseFloat(d.Actual_Deliverables || 0), 0);
+            const planDeliv = globalData.reduce((sum, d) => sum + parseFloat(d.Planned_Delivrable || 0), 0);
+            const delivRate = planDeliv > 0 ? (actDeliv / planDeliv) * 100 : 0;
+            document.getElementById('kpi-ext-deliverables').innerText = `${delivRate.toFixed(1)}%`;
+
+            // Worst Country by Cost Variance
+            const countryVar = {};
+            globalData.forEach(d => {
+                if(!d.Country) return;
+                countryVar[d.Country] = (countryVar[d.Country] || 0) + parseFloat(d.Cost_Variance || 0);
+            });
+            let worstCountry = "N/A";
+            let worstVal = -Infinity;
+            for(let c in countryVar) { if(countryVar[c] > worstVal) { worstVal = countryVar[c]; worstCountry = c; } }
+            document.getElementById('kpi-ext-worst-country').innerText = worstCountry;
+
+            // Phase Count
+            document.getElementById('kpi-ext-count').innerText = globalData.length;
+        };
+
+        const renderExtendedCharts = () => {
+            // Wait a tick for Display:block to assign proper canvas sizes before rendering
+            setTimeout(() => {
+                renderExtCountryChart();
+                renderExtScatterChart();
+                renderExtDurationPhaseChart();
+                renderExtRadarChart();
+            }, 100);
+        };
+
+        const renderExtCountryChart = () => {
+            const ctx = document.getElementById('extCountryChart').getContext('2d');
+            if (charts.extCountry) charts.extCountry.destroy();
+
+            const cData = {};
+            globalData.forEach(d => {
+                if(!d.Country) return;
+                if(!cData[d.Country]) cData[d.Country] = 0;
+                cData[d.Country] += parseFloat(d.Cost_Variance || 0);
+            });
+
+            // Sort by variance descending
+            const sorted = Object.entries(cData).sort((a,b) => b[1] - a[1]);
+            const labels = sorted.map(i => i[0]);
+            const data = sorted.map(i => i[1]);
+
+            charts.extCountry = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Total Cost Variance ($)',
+                        data: data,
+                        backgroundColor: data.map(v => v > 0 ? 'rgba(255, 51, 51, 0.8)' : 'rgba(0, 255, 136, 0.8)'),
+                        borderColor: data.map(v => v > 0 ? '#ff3333' : '#00ff88'),
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: 'rgba(255,255,255,0.1)', borderDash: [2, 4] } },
+                        y: { grid: { display: false } }
+                    }
+                }
+            });
+        };
+
+        const renderExtScatterChart = () => {
+            const ctx = document.getElementById('extScatterChart').getContext('2d');
+            if (charts.extScatter) charts.extScatter.destroy();
+
+            // 10-Year BI Expert Approach: Categorical Scatter Plot
+            // Instead of sizing bubbles by cost (which causes massive overlapping),
+            // we use standardized point sizes, low opacity for density mapping,
+            // and color-code by Health Status to see exactly WHICH projects are deviating.
+
+            const datasets = [
+                { label: 'On Track', color: '#00ff88', data: [] },
+                { label: 'At Risk', color: '#ffaa00', data: [] },
+                { label: 'Over Budget', color: '#ff3333', data: [] }
+            ];
+
+            globalData.forEach(d => {
+                const point = {
+                    x: parseFloat(d.Actual_Duration || 0),
+                    y: parseFloat(d.Cost_Variance_Pct || 0),
+                    cost: parseFloat(d.Actual_Cost || 0),
+                    projectName: `ID: ${d.Project_ID} (${d.Phase})`
+                };
+
+                if (d.Health_Status === 'On Track') datasets[0].data.push(point);
+                else if (d.Health_Status === 'At Risk') datasets[1].data.push(point);
+                else datasets[2].data.push(point); // Over Budget
+            });
+
+            const formatCurrency = (val) => '$' + (val / 1000).toFixed(0) + 'K';
+
+            charts.extScatter = new Chart(ctx, {
+                type: 'scatter', 
+                data: {
+                    datasets: datasets.map(ds => ({
+                        label: ds.label,
+                        data: ds.data,
+                        backgroundColor: ds.color + '80', // 50% opacity for density blending
+                        borderColor: ds.color,
+                        borderWidth: 1,
+                        pointRadius: 6,
+                        pointHoverRadius: 9
+                    }))
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: { usePointStyle: true, boxWidth: 8, color: '#8b8b9e' }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => {
+                                    const d = ctx.raw;
+                                    return `${d.projectName} | Dur: ${d.x}d | Var: ${d.y}% | Cost: ${formatCurrency(d.cost)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            title: { display: true, text: 'Actual Duration (Days)', color: '#8b8b9e' }, 
+                            grid: { borderDash: [2, 4], color: 'rgba(255,255,255,0.05)' } 
+                        },
+                        y: { 
+                            title: { display: true, text: 'Cost Variance (%)', color: '#8b8b9e' }, 
+                            grid: { 
+                                // Emphasize the 0% Zero-Line
+                                color: (ctx) => ctx.tick.value === 0 ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255,255,255,0.05)',
+                                borderDash: (ctx) => ctx.tick.value === 0 ? [] : [2, 4],
+                                lineWidth: (ctx) => ctx.tick.value === 0 ? 2 : 1
+                            } 
+                        }
+                    }
+                }
+            });
+        };
+
+        const renderExtDurationPhaseChart = () => {
+            const ctx = document.getElementById('extDurationPhaseChart').getContext('2d');
+            if (charts.extDurationPhase) charts.extDurationPhase.destroy();
+
+            const pData = {};
+            globalData.forEach(d => {
+                if(!d.Phase) return;
+                const phase = d.Phase.split(' - ')[0];
+                if(!pData[phase]) pData[phase] = { p: 0, a: 0, c: 0 };
+                pData[phase].p += parseFloat(d.Planned_Duration || 0);
+                pData[phase].a += parseFloat(d.Actual_Duration || 0);
+                pData[phase].c++;
+            });
+
+            const labels = Object.keys(pData).sort();
+            const planned = labels.map(l => pData[l].p / pData[l].c);
+            const actual = labels.map(l => pData[l].a / pData[l].c);
+
+            charts.extDurationPhase = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Avg Planned Duration (Days)', data: planned, backgroundColor: 'rgba(112, 0, 255, 0.6)', borderColor: '#7000ff', borderWidth: 1, borderRadius: 4 },
+                        { label: 'Avg Actual Duration (Days)', data: actual, backgroundColor: 'rgba(255, 170, 0, 0.6)', borderColor: '#ffaa00', borderWidth: 1, borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { grid: { borderDash: [2, 4] } }
+                    }
+                }
+            });
+        };
+
+        const renderExtRadarChart = () => {
+            const ctx = document.getElementById('extRadarChart').getContext('2d');
+            if (charts.extRadar) charts.extRadar.destroy();
+
+            // Group deliverables by Project Type
+            const tData = {};
+            globalData.forEach(d => {
+                if(!d.Project_Type) return;
+                let type = d.Project_Type;
+                // shorten long names if needed
+                if(type.includes('-')) type = type.split('-')[0].trim();
+
+                if(!tData[type]) tData[type] = { p: 0, a: 0 };
+                tData[type].p += parseFloat(d.Planned_Delivrable || 0);
+                tData[type].a += parseFloat(d.Actual_Deliverables || 0);
+            });
+
+            const labels = Object.keys(tData);
+            const pData = labels.map(l => tData[l].p);
+            const aData = labels.map(l => tData[l].a);
+
+            charts.extRadar = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Planned Deliverables', data: pData, backgroundColor: 'rgba(0, 240, 255, 0.2)', borderColor: '#00f0ff', pointBackgroundColor: '#00f0ff' },
+                        { label: 'Actual Deliverables', data: aData, backgroundColor: 'rgba(255, 0, 127, 0.2)', borderColor: '#ff007f', pointBackgroundColor: '#ff007f' }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            pointLabels: { color: '#8b8b9e', font: { size: window.innerWidth * 0.008 } },
+                            ticks: { display: false }
+                        }
+                    }
+                }
+            });
+        };
+
+        // Kickoff
+        window.onload = attemptAutoLoad;
+
+    </script>
+</body>
+</html>
